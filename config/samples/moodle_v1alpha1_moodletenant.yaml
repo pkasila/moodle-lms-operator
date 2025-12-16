@@ -1,0 +1,39 @@
+apiVersion: moodle.bsu.by/v1alpha1
+kind: MoodleTenant
+metadata:
+  labels:
+    app.kubernetes.io/name: moodle-lms-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: biology-dept
+spec:
+  hostname: biology.bsu.by
+  image: bitnami/moodle:latest
+  
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "2000m"
+      memory: "1Gi"
+  
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPU: 75
+  
+  storage:
+    size: "500Gi"
+    storageClass: "csi-cephfs-sc"
+  
+  databaseRef:
+    host: "postgres-cluster.db-tier.svc"
+    adminSecret: "postgres-admin"
+  
+  phpSettings:
+    maxExecutionTime: 60
+    memoryLimit: "512M"
+  
+  memcached:
+    memoryMB: 128

@@ -1,0 +1,209 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: moodletenants.moodle.bsu.by
+spec:
+  group: moodle.bsu.by
+  names:
+    kind: MoodleTenant
+    listKind: MoodleTenantList
+    plural: moodletenants
+    singular: moodletenant
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: MoodleTenant is the Schema for the moodletenants API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: MoodleTenantSpec defines the desired state of MoodleTenant
+            properties:
+              databaseRef:
+                description: DatabaseRef is a reference to the database to be used
+                  for this Moodle instance.
+                properties:
+                  adminSecret:
+                    description: AdminSecret is the name of the secret containing
+                      the admin credentials for the database.
+                    type: string
+                  host:
+                    description: Host of the database.
+                    type: string
+                  name:
+                    description: Name of the database.
+                    type: string
+                  password:
+                    description: Password for the database.
+                    type: string
+                  user:
+                    description: User for the database.
+                    type: string
+                required:
+                - adminSecret
+                - host
+                - name
+                - password
+                - user
+                type: object
+              hostname:
+                description: Hostname for the Moodle instance.
+                type: string
+              hpa:
+                description: HPA configuration for the Moodle instance.
+                properties:
+                  enabled:
+                    default: false
+                    description: Enabled enables or disables HPA.
+                    type: boolean
+                  maxReplicas:
+                    default: 10
+                    description: MaxReplicas is the maximum number of replicas.
+                    format: int32
+                    type: integer
+                  minReplicas:
+                    default: 2
+                    description: MinReplicas is the minimum number of replicas.
+                    format: int32
+                    type: integer
+                  targetCPU:
+                    default: 75
+                    description: TargetCPU is the target CPU utilization percentage.
+                    format: int32
+                    type: integer
+                required:
+                - maxReplicas
+                type: object
+              image:
+                description: Image for the Moodle container.
+                type: string
+              memcached:
+                description: Memcached configuration for the Moodle instance.
+                properties:
+                  memoryMB:
+                    default: 128
+                    description: MemoryMB is the memory limit for Memcached in megabytes.
+                    type: integer
+                type: object
+              phpSettings:
+                description: PHPSettings for the Moodle instance.
+                properties:
+                  maxExecutionTime:
+                    default: 60
+                    description: MaxExecutionTime for PHP scripts.
+                    type: integer
+                  memoryLimit:
+                    default: 512M
+                    description: MemoryLimit for PHP scripts.
+                    type: string
+                type: object
+              resources:
+                description: Resources for the Moodle container.
+                properties:
+                  claims:
+                    description: |-
+                      Claims lists the names of resources, defined in spec.resourceClaims,
+                      that are used by this container.
+
+                      This field depends on the
+                      DynamicResourceAllocation feature gate.
+
+                      This field is immutable. It can only be set for containers.
+                    items:
+                      description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                      properties:
+                        name:
+                          description: |-
+                            Name must match the name of one entry in pod.spec.resourceClaims of
+                            the Pod where this field is used. It makes that resource available
+                            inside a container.
+                          type: string
+                        request:
+                          description: |-
+                            Request is the name chosen for a request in the referenced claim.
+                            If empty, everything from the claim is made available, otherwise
+                            only the result of this request.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
+                  limits:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      Limits describes the maximum amount of compute resources allowed.
+                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                    type: object
+                  requests:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      Requests describes the minimum amount of compute resources required.
+                      If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                      otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                    type: object
+                type: object
+              storage:
+                description: Storage configuration for the Moodle instance.
+                properties:
+                  size:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: Size of the persistent volume.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  storageClass:
+                    default: csi-cephfs-sc
+                    description: StorageClass for the persistent volume.
+                    type: string
+                required:
+                - size
+                type: object
+            required:
+            - databaseRef
+            - hostname
+            - image
+            - storage
+            type: object
+          status:
+            description: MoodleTenantStatus defines the observed state of MoodleTenant
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

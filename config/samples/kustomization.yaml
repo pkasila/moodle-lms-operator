@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- moodle_v1alpha1_moodletenant.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

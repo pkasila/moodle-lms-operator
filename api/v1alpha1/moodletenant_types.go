@@ -145,8 +145,8 @@ type MoodleTenantStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // MoodleTenant is the Schema for the moodletenants API
 type MoodleTenant struct {
@@ -157,7 +157,7 @@ type MoodleTenant struct {
 	Status MoodleTenantStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // MoodleTenantList contains a list of MoodleTenant
 type MoodleTenantList struct {

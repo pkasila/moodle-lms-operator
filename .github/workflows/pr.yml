@@ -1,0 +1,74 @@
+name: Pull Request
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # Check if PR needs version bump
+  check-version:
+    name: Check Version Bump
+    runs-on: ubuntu-latest
+    if: |
+      !contains(github.event.pull_request.labels.*.name, 'skip-version-check') &&
+      !contains(github.event.pull_request.labels.*.name, 'documentation')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for version changes
+        run: |
+          # Check if any Go files changed
+          GO_CHANGES=$(git diff --name-only origin/main...HEAD | grep -E '\.(go|mod|sum)$' || true)
+          
+          if [ -n "$GO_CHANGES" ]; then
+            echo "Go code changes detected. Please ensure version is updated if this is a feature or fix."
+            echo "Changed files:"
+            echo "$GO_CHANGES"
+          fi
+
+  # Label the PR based on changes
+  labeler:
+    name: Label PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Label PR
+        uses: actions/labeler@v5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+  # Check PR title format
+  check-title:
+    name: Check PR Title
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+          requireScope: false

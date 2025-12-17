@@ -1,0 +1,44 @@
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+      - 'docs/**/*'
+
+tests:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*_test.go'
+      - 'test/**/*'
+
+ci:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/**/*'
+      - 'Makefile'
+      - 'Dockerfile'
+
+api:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'api/**/*'
+
+controller:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'internal/controller/**/*'
+
+config:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'config/**/*'
+
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'go.mod'
+      - 'go.sum'
+
+moodle-image:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'moodle-image/**/*'

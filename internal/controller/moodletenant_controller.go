@@ -65,22 +65,22 @@ const moodleTenantFinalizer = "moodle.bsu.by/finalizer"
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *MoodleTenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
 	// Fetch the MoodleTenant instance
 	moodleTenant := &moodlev1alpha1.MoodleTenant{}
 	err := r.Get(ctx, req.NamespacedName, moodleTenant)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			log.Info("MoodleTenant resource not found. Ignoring since object must be deleted")
+			logger.Info("MoodleTenant resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
-		log.Error(err, "Failed to get MoodleTenant")
+		logger.Error(err, "Failed to get MoodleTenant")
 		return ctrl.Result{}, err
 	}
 
 	// Examine DeletionTimestamp to determine if object is under deletion
-	if moodleTenant.ObjectMeta.DeletionTimestamp.IsZero() {
+	if moodleTenant.DeletionTimestamp.IsZero() {
 		// The object is not being deleted, so register our finalizer
 		if !containsString(moodleTenant.GetFinalizers(), moodleTenantFinalizer) {
 			moodleTenant.SetFinalizers(append(moodleTenant.GetFinalizers(), moodleTenantFinalizer))
@@ -121,15 +121,15 @@ func (r *MoodleTenantReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	foundNamespace := &corev1.Namespace{}
 	err = r.Get(ctx, types.NamespacedName{Name: namespace.Name}, foundNamespace)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating a new Namespace", "Namespace.Name", namespace.Name)
+		logger.Info("Creating a new Namespace", "Namespace.Name", namespace.Name)
 		err = r.Create(ctx, namespace)
 		if err != nil {
-			log.Error(err, "Failed to create new Namespace", "Namespace.Name", namespace.Name)
+			logger.Error(err, "Failed to create new Namespace", "Namespace.Name", namespace.Name)
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
-		log.Error(err, "Failed to get Namespace")
+		logger.Error(err, "Failed to get Namespace")
 		return ctrl.Result{}, err
 	}
 
@@ -170,15 +170,15 @@ func (r *MoodleTenantReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, err
 	}
 
-	log.Info("Successfully reconciled MoodleTenant", "Name", moodleTenant.Name)
+	logger.Info("Successfully reconciled MoodleTenant", "Name", moodleTenant.Name)
 
 	return ctrl.Result{}, nil
 }
 
 // finalizeMoodleTenant handles cleanup before the MoodleTenant is deleted
 func (r *MoodleTenantReconciler) finalizeMoodleTenant(ctx context.Context, mt *moodlev1alpha1.MoodleTenant) error {
-	log := log.FromContext(ctx)
-	log.Info("Finalizing MoodleTenant", "Name", mt.Name)
+	logger := log.FromContext(ctx)
+	logger.Info("Finalizing MoodleTenant", "Name", mt.Name)
 
 	// Delete the tenant namespace
 	tenantNamespace := "tenant-" + mt.Name
@@ -186,13 +186,13 @@ func (r *MoodleTenantReconciler) finalizeMoodleTenant(ctx context.Context, mt *m
 	err := r.Get(ctx, types.NamespacedName{Name: tenantNamespace}, namespace)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			log.Info("Namespace already deleted", "Namespace", tenantNamespace)
+			logger.Info("Namespace already deleted", "Namespace", tenantNamespace)
 			return nil
 		}
 		return err
 	}
 
-	log.Info("Deleting namespace", "Namespace", tenantNamespace)
+	logger.Info("Deleting namespace", "Namespace", tenantNamespace)
 	if err := r.Delete(ctx, namespace); err != nil {
 		if errors.IsNotFound(err) {
 			return nil
@@ -200,13 +200,13 @@ func (r *MoodleTenantReconciler) finalizeMoodleTenant(ctx context.Context, mt *m
 		return err
 	}
 
-	log.Info("Namespace deleted successfully", "Namespace", tenantNamespace)
+	logger.Info("Namespace deleted successfully", "Namespace", tenantNamespace)
 	return nil
 }
 
 // reconcileDeployment creates or updates the Moodle Deployment
 func (r *MoodleTenantReconciler) reconcileDeployment(ctx context.Context, mt *moodlev1alpha1.MoodleTenant, namespace string) error {
-	log := log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
 	deployment := r.deploymentForMoodle(mt, namespace)
 
@@ -214,26 +214,26 @@ func (r *MoodleTenantReconciler) reconcileDeployment(ctx context.Context, mt *mo
 	found := &appsv1.Deployment{}
 	err := r.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating a new Deployment", "Deployment.Namespace", deployment.Namespace, "Deployment.Name", deployment.Name)
+		logger.Info("Creating a new Deployment", "Deployment.Namespace", deployment.Namespace, "Deployment.Name", deployment.Name)
 		err = r.Create(ctx, deployment)
 		if err != nil {
-			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", deployment.Namespace, "Deployment.Name", deployment.Name)
+			logger.Error(err, "Failed to create new Deployment", "Deployment.Namespace", deployment.Namespace, "Deployment.Name", deployment.Name)
 			return err
 		}
 		return nil
 	} else if err != nil {
-		log.Error(err, "Failed to get Deployment")
+		logger.Error(err, "Failed to get Deployment")
 		return err
 	}
 
 	// Deployment exists, could implement update logic here
-	log.Info("Deployment already exists", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+	logger.Info("Deployment already exists", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
 	return nil
 }
 
 // reconcilePVC creates or updates the PersistentVolumeClaim
 func (r *MoodleTenantReconciler) reconcilePVC(ctx context.Context, mt *moodlev1alpha1.MoodleTenant, namespace string) error {
-	log := log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
 	pvc := r.pvcForMoodle(mt, namespace)
 
@@ -241,25 +241,25 @@ func (r *MoodleTenantReconciler) reconcilePVC(ctx context.Context, mt *moodlev1a
 	found := &corev1.PersistentVolumeClaim{}
 	err := r.Get(ctx, types.NamespacedName{Name: pvc.Name, Namespace: pvc.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating a new PVC", "PVC.Namespace", pvc.Namespace, "PVC.Name", pvc.Name)
+		logger.Info("Creating a new PVC", "PVC.Namespace", pvc.Namespace, "PVC.Name", pvc.Name)
 		err = r.Create(ctx, pvc)
 		if err != nil {
-			log.Error(err, "Failed to create new PVC", "PVC.Namespace", pvc.Namespace, "PVC.Name", pvc.Name)
+			logger.Error(err, "Failed to create new PVC", "PVC.Namespace", pvc.Namespace, "PVC.Name", pvc.Name)
 			return err
 		}
 		return nil
 	} else if err != nil {
-		log.Error(err, "Failed to get PVC")
+		logger.Error(err, "Failed to get PVC")
 		return err
 	}
 
-	log.Info("PVC already exists", "PVC.Namespace", found.Namespace, "PVC.Name", found.Name)
+	logger.Info("PVC already exists", "PVC.Namespace", found.Namespace, "PVC.Name", found.Name)
 	return nil
 }
 
 // reconcileService creates or updates the Service
 func (r *MoodleTenantReconciler) reconcileService(ctx context.Context, mt *moodlev1alpha1.MoodleTenant, namespace string) error {
-	log := log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
 	service := r.serviceForMoodle(mt, namespace)
 
@@ -267,25 +267,25 @@ func (r *MoodleTenantReconciler) reconcileService(ctx context.Context, mt *moodl
 	found := &corev1.Service{}
 	err := r.Get(ctx, types.NamespacedName{Name: service.Name, Namespace: service.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating a new Service", "Service.Namespace", service.Namespace, "Service.Name", service.Name)
+		logger.Info("Creating a new Service", "Service.Namespace", service.Namespace, "Service.Name", service.Name)
 		err = r.Create(ctx, service)
 		if err != nil {
-			log.Error(err, "Failed to create new Service", "Service.Namespace", service.Namespace, "Service.Name", service.Name)
+			logger.Error(err, "Failed to create new Service", "Service.Namespace", service.Namespace, "Service.Name", service.Name)
 			return err
 		}
 		return nil
 	} else if err != nil {
-		log.Error(err, "Failed to get Service")
+		logger.Error(err, "Failed to get Service")
 		return err
 	}
 
-	log.Info("Service already exists", "Service.Namespace", found.Namespace, "Service.Name", found.Name)
+	logger.Info("Service already exists", "Service.Namespace", found.Namespace, "Service.Name", found.Name)
 	return nil
 }
 
 // reconcileIngress creates or updates the Ingress
 func (r *MoodleTenantReconciler) reconcileIngress(ctx context.Context, mt *moodlev1alpha1.MoodleTenant, namespace string) error {
-	log := log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
 	ingress := r.ingressForMoodle(mt, namespace)
 
@@ -293,25 +293,25 @@ func (r *MoodleTenantReconciler) reconcileIngress(ctx context.Context, mt *moodl
 	found := &networkingv1.Ingress{}
 	err := r.Get(ctx, types.NamespacedName{Name: ingress.Name, Namespace: ingress.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating a new Ingress", "Ingress.Namespace", ingress.Namespace, "Ingress.Name", ingress.Name)
+		logger.Info("Creating a new Ingress", "Ingress.Namespace", ingress.Namespace, "Ingress.Name", ingress.Name)
 		err = r.Create(ctx, ingress)
 		if err != nil {
-			log.Error(err, "Failed to create new Ingress", "Ingress.Namespace", ingress.Namespace, "Ingress.Name", ingress.Name)
+			logger.Error(err, "Failed to create new Ingress", "Ingress.Namespace", ingress.Namespace, "Ingress.Name", ingress.Name)
 			return err
 		}
 		return nil
 	} else if err != nil {
-		log.Error(err, "Failed to get Ingress")
+		logger.Error(err, "Failed to get Ingress")
 		return err
 	}
 
-	log.Info("Ingress already exists", "Ingress.Namespace", found.Namespace, "Ingress.Name", found.Name)
+	logger.Info("Ingress already exists", "Ingress.Namespace", found.Namespace, "Ingress.Name", found.Name)
 	return nil
 }
 
 // reconcileNetworkPolicy creates or updates the NetworkPolicy
 func (r *MoodleTenantReconciler) reconcileNetworkPolicy(ctx context.Context, mt *moodlev1alpha1.MoodleTenant, namespace string) error {
-	log := log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
 	networkPolicy := r.networkPolicyForMoodle(mt, namespace)
 
@@ -319,28 +319,28 @@ func (r *MoodleTenantReconciler) reconcileNetworkPolicy(ctx context.Context, mt 
 	found := &networkingv1.NetworkPolicy{}
 	err := r.Get(ctx, types.NamespacedName{Name: networkPolicy.Name, Namespace: networkPolicy.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating a new NetworkPolicy", "NetworkPolicy.Namespace", networkPolicy.Namespace, "NetworkPolicy.Name", networkPolicy.Name)
+		logger.Info("Creating a new NetworkPolicy", "NetworkPolicy.Namespace", networkPolicy.Namespace, "NetworkPolicy.Name", networkPolicy.Name)
 		err = r.Create(ctx, networkPolicy)
 		if err != nil {
-			log.Error(err, "Failed to create new NetworkPolicy", "NetworkPolicy.Namespace", networkPolicy.Namespace, "NetworkPolicy.Name", networkPolicy.Name)
+			logger.Error(err, "Failed to create new NetworkPolicy", "NetworkPolicy.Namespace", networkPolicy.Namespace, "NetworkPolicy.Name", networkPolicy.Name)
 			return err
 		}
 		return nil
 	} else if err != nil {
-		log.Error(err, "Failed to get NetworkPolicy")
+		logger.Error(err, "Failed to get NetworkPolicy")
 		return err
 	}
 
-	log.Info("NetworkPolicy already exists", "NetworkPolicy.Namespace", found.Namespace, "NetworkPolicy.Name", found.Name)
+	logger.Info("NetworkPolicy already exists", "NetworkPolicy.Namespace", found.Namespace, "NetworkPolicy.Name", found.Name)
 	return nil
 }
 
 func (r *MoodleTenantReconciler) reconcileHPA(ctx context.Context, mt *moodlev1alpha1.MoodleTenant, namespace string) error {
-	log := log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
 	// Only create HPA if enabled
 	if !mt.Spec.HPA.Enabled {
-		log.Info("HPA is disabled, skipping")
+		logger.Info("HPA is disabled, skipping")
 		return nil
 	}
 
@@ -349,54 +349,54 @@ func (r *MoodleTenantReconciler) reconcileHPA(ctx context.Context, mt *moodlev1a
 	foundHPA := &autoscalingv2.HorizontalPodAutoscaler{}
 	err := r.Get(ctx, types.NamespacedName{Name: hpa.Name, Namespace: hpa.Namespace}, foundHPA)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating a new HPA", "HPA.Namespace", hpa.Namespace, "HPA.Name", hpa.Name)
+		logger.Info("Creating a new HPA", "HPA.Namespace", hpa.Namespace, "HPA.Name", hpa.Name)
 		err = r.Create(ctx, hpa)
 		if err != nil {
-			log.Error(err, "Failed to create new HPA", "HPA.Namespace", hpa.Namespace, "HPA.Name", hpa.Name)
+			logger.Error(err, "Failed to create new HPA", "HPA.Namespace", hpa.Namespace, "HPA.Name", hpa.Name)
 			return err
 		}
 		return nil
 	} else if err != nil {
-		log.Error(err, "Failed to get HPA")
+		logger.Error(err, "Failed to get HPA")
 		return err
 	}
 
 	// HPA exists, update if needed
-	log.Info("HPA already exists", "HPA.Namespace", foundHPA.Namespace, "HPA.Name", foundHPA.Name)
+	logger.Info("HPA already exists", "HPA.Namespace", foundHPA.Namespace, "HPA.Name", foundHPA.Name)
 	return nil
 }
 
 func (r *MoodleTenantReconciler) reconcileCronJob(ctx context.Context, mt *moodlev1alpha1.MoodleTenant, namespace string) error {
-	log := log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
 	cronJob := r.cronJobForMoodle(mt, namespace)
 
 	foundCronJob := &batchv1.CronJob{}
 	err := r.Get(ctx, types.NamespacedName{Name: cronJob.Name, Namespace: cronJob.Namespace}, foundCronJob)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating a new CronJob", "CronJob.Namespace", cronJob.Namespace, "CronJob.Name", cronJob.Name)
+		logger.Info("Creating a new CronJob", "CronJob.Namespace", cronJob.Namespace, "CronJob.Name", cronJob.Name)
 		err = r.Create(ctx, cronJob)
 		if err != nil {
-			log.Error(err, "Failed to create new CronJob", "CronJob.Namespace", cronJob.Namespace, "CronJob.Name", cronJob.Name)
+			logger.Error(err, "Failed to create new CronJob", "CronJob.Namespace", cronJob.Namespace, "CronJob.Name", cronJob.Name)
 			return err
 		}
 		return nil
 	} else if err != nil {
-		log.Error(err, "Failed to get CronJob")
+		logger.Error(err, "Failed to get CronJob")
 		return err
 	}
 
 	// CronJob exists, update if needed
-	log.Info("CronJob already exists", "CronJob.Namespace", foundCronJob.Namespace, "CronJob.Name", foundCronJob.Name)
+	logger.Info("CronJob already exists", "CronJob.Namespace", foundCronJob.Namespace, "CronJob.Name", foundCronJob.Name)
 	return nil
 }
 
 func (r *MoodleTenantReconciler) reconcilePDB(ctx context.Context, mt *moodlev1alpha1.MoodleTenant, namespace string) error {
-	log := log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
 	// Only create PDB if HPA is enabled (implies we have multiple replicas)
 	if !mt.Spec.HPA.Enabled {
-		log.Info("HPA is disabled, skipping PDB creation")
+		logger.Info("HPA is disabled, skipping PDB creation")
 		return nil
 	}
 
@@ -405,26 +405,26 @@ func (r *MoodleTenantReconciler) reconcilePDB(ctx context.Context, mt *moodlev1a
 	foundPDB := &policyv1.PodDisruptionBudget{}
 	err := r.Get(ctx, types.NamespacedName{Name: pdb.Name, Namespace: pdb.Namespace}, foundPDB)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating a new PDB", "PDB.Namespace", pdb.Namespace, "PDB.Name", pdb.Name)
+		logger.Info("Creating a new PDB", "PDB.Namespace", pdb.Namespace, "PDB.Name", pdb.Name)
 		err = r.Create(ctx, pdb)
 		if err != nil {
-			log.Error(err, "Failed to create new PDB", "PDB.Namespace", pdb.Namespace, "PDB.Name", pdb.Name)
+			logger.Error(err, "Failed to create new PDB", "PDB.Namespace", pdb.Namespace, "PDB.Name", pdb.Name)
 			return err
 		}
 		return nil
 	} else if err != nil {
-		log.Error(err, "Failed to get PDB")
+		logger.Error(err, "Failed to get PDB")
 		return err
 	}
 
 	// PDB exists, update if needed
-	log.Info("PDB already exists", "PDB.Namespace", foundPDB.Namespace, "PDB.Name", foundPDB.Name)
+	logger.Info("PDB already exists", "PDB.Namespace", foundPDB.Namespace, "PDB.Name", foundPDB.Name)
 	return nil
 }
 
 // reconcileSecret creates or updates the database Secret
 func (r *MoodleTenantReconciler) reconcileSecret(ctx context.Context, mt *moodlev1alpha1.MoodleTenant, namespace string) error {
-	log := log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
 	secret := r.secretForMoodle(mt, namespace)
 
@@ -432,19 +432,19 @@ func (r *MoodleTenantReconciler) reconcileSecret(ctx context.Context, mt *moodle
 	found := &corev1.Secret{}
 	err := r.Get(ctx, types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating a new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
+		logger.Info("Creating a new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
 		err = r.Create(ctx, secret)
 		if err != nil {
-			log.Error(err, "Failed to create new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
+			logger.Error(err, "Failed to create new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
 			return err
 		}
 		return nil
 	} else if err != nil {
-		log.Error(err, "Failed to get Secret")
+		logger.Error(err, "Failed to get Secret")
 		return err
 	}
 
-	log.Info("Secret already exists", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
+	logger.Info("Secret already exists", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
 	return nil
 }
 
@@ -464,7 +464,9 @@ func (r *MoodleTenantReconciler) secretForMoodle(mt *moodlev1alpha1.MoodleTenant
 	}
 
 	// Set MoodleTenant instance as the owner
-	ctrl.SetControllerReference(mt, secret, r.Scheme)
+	if err := ctrl.SetControllerReference(mt, secret, r.Scheme); err != nil {
+		return nil
+	}
 
 	return secret
 }
@@ -678,7 +680,9 @@ func (r *MoodleTenantReconciler) deploymentForMoodle(mt *moodlev1alpha1.MoodleTe
 	}
 
 	// Set MoodleTenant instance as the owner
-	ctrl.SetControllerReference(mt, deployment, r.Scheme)
+	if err := ctrl.SetControllerReference(mt, deployment, r.Scheme); err != nil {
+		return nil
+	}
 
 	return deployment
 }
@@ -716,7 +720,9 @@ func (r *MoodleTenantReconciler) pvcForMoodle(mt *moodlev1alpha1.MoodleTenant, n
 	}
 
 	// Set MoodleTenant instance as the owner
-	ctrl.SetControllerReference(mt, pvc, r.Scheme)
+	if err := ctrl.SetControllerReference(mt, pvc, r.Scheme); err != nil {
+		return nil
+	}
 
 	return pvc
 }
@@ -752,60 +758,6 @@ func (r *MoodleTenantReconciler) serviceForMoodle(mt *moodlev1alpha1.MoodleTenan
 	ctrl.SetControllerReference(mt, service, r.Scheme)
 
 	return service
-}
-
-// configMapForNginx returns a ConfigMap with nginx configuration
-func (r *MoodleTenantReconciler) configMapForNginx(mt *moodlev1alpha1.MoodleTenant, namespace string) *corev1.ConfigMap {
-	nginxConf := `server {
-    listen 8080;
-    server_name _;
-    root /var/www/html;
-    index index.php index.html;
-
-    client_max_body_size 100M;
-    client_body_temp_path /tmp/client_body;
-    proxy_temp_path /tmp/proxy_temp;
-    fastcgi_temp_path /tmp/fastcgi_temp;
-    uwsgi_temp_path /tmp/uwsgi_temp;
-    scgi_temp_path /tmp/scgi_temp;
-    fastcgi_read_timeout 300;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ [^/]\.php(/|$) {
-        fastcgi_split_path_info ^(.+?\.php)(/.*)$;
-        if (!-f $document_root$fastcgi_script_name) {
-            return 404;
-        }
-        fastcgi_pass 127.0.0.1:9000;
-        fastcgi_index index.php;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        fastcgi_param PATH_INFO $fastcgi_path_info;
-        fastcgi_param PATH_TRANSLATED $document_root$fastcgi_path_info;
-        include fastcgi_params;
-    }
-
-    location ~ /\.ht {
-        deny all;
-    }
-}`
-
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      mt.Name + "-nginx-config",
-			Namespace: namespace,
-		},
-		Data: map[string]string{
-			"default.conf": nginxConf,
-		},
-	}
-
-	// Set MoodleTenant instance as the owner
-	ctrl.SetControllerReference(mt, configMap, r.Scheme)
-
-	return configMap
 }
 
 // ingressForMoodle returns an Ingress object for the MoodleTenant

@@ -99,7 +99,7 @@ jobs:
             type=semver,pattern={{major}}
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=4.5-fpm,enable={{is_default_branch}}
+            type=raw,value=5.1-fpm,enable={{is_default_branch}}
 
       - name: Build and push Moodle image
         uses: docker/build-push-action@v5

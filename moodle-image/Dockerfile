@@ -3,7 +3,7 @@
 
 # --- Build Stage ---
 # This stage only downloads the Moodle source code to keep the final image clean.
-FROM php:8.5-fpm as builder
+FROM php:8.4-fpm as builder
 
 # Set Moodle version argument
 ARG MOODLE_VERSION=MOODLE_501_STABLE
@@ -18,7 +18,7 @@ RUN git clone --depth 1 -b ${MOODLE_VERSION} https://github.com/moodle/moodle.gi
 
 # --- Final Stage ---
 # Start from a fresh PHP-FPM image for the final "runner"
-FROM php:8.5-fpm
+FROM php:8.4-fpm
 
 ENV DEBIAN_FRONTEND=noninteractive
 

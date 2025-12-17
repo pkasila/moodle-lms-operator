@@ -38,11 +38,13 @@ jobs:
         run: |
           make kustomize
           $(pwd)/bin/kustomize build config/crd > /tmp/crds.yaml
-          kubectl apply --dry-run=client -f /tmp/crds.yaml
+          # Validate YAML syntax only (no cluster needed)
+          kubectl apply --dry-run=client --validate=false -f /tmp/crds.yaml
 
       - name: Validate samples
         run: |
-          kubectl apply --dry-run=client -f config/samples/
+          # Validate YAML syntax only (no cluster needed)
+          kubectl apply --dry-run=client --validate=false -f config/samples/
 
   validate-go:
     name: Validate Go Code

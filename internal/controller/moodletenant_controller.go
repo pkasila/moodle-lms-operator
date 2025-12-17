@@ -46,19 +46,19 @@ type MoodleTenantReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=moodle.bsu.by,resources=moodletenants,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=moodle.bsu.by,resources=moodletenants/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=moodle.bsu.by,resources=moodletenants/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=moodle.bsu.by,resources=moodletenants,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=moodle.bsu.by,resources=moodletenants/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=moodle.bsu.by,resources=moodletenants/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
 
 const moodleTenantFinalizer = "moodle.bsu.by/finalizer"
 
@@ -755,7 +755,9 @@ func (r *MoodleTenantReconciler) serviceForMoodle(mt *moodlev1alpha1.MoodleTenan
 	}
 
 	// Set MoodleTenant instance as the owner
-	ctrl.SetControllerReference(mt, service, r.Scheme)
+	if err := ctrl.SetControllerReference(mt, service, r.Scheme); err != nil {
+		return nil
+	}
 
 	return service
 }
@@ -811,7 +813,9 @@ func (r *MoodleTenantReconciler) ingressForMoodle(mt *moodlev1alpha1.MoodleTenan
 	}
 
 	// Set MoodleTenant instance as the owner
-	ctrl.SetControllerReference(mt, ingress, r.Scheme)
+	if err := ctrl.SetControllerReference(mt, ingress, r.Scheme); err != nil {
+		return nil
+	}
 
 	return ingress
 }
@@ -914,7 +918,9 @@ func (r *MoodleTenantReconciler) networkPolicyForMoodle(mt *moodlev1alpha1.Moodl
 	}
 
 	// Set MoodleTenant instance as the owner
-	ctrl.SetControllerReference(mt, networkPolicy, r.Scheme)
+	if err := ctrl.SetControllerReference(mt, networkPolicy, r.Scheme); err != nil {
+		return nil
+	}
 
 	return networkPolicy
 }
@@ -960,7 +966,9 @@ func (r *MoodleTenantReconciler) hpaForMoodle(mt *moodlev1alpha1.MoodleTenant, n
 	}
 
 	// Set MoodleTenant instance as the owner
-	ctrl.SetControllerReference(mt, hpa, r.Scheme)
+	if err := ctrl.SetControllerReference(mt, hpa, r.Scheme); err != nil {
+		return nil
+	}
 
 	return hpa
 }
@@ -1074,7 +1082,9 @@ func (r *MoodleTenantReconciler) cronJobForMoodle(mt *moodlev1alpha1.MoodleTenan
 	}
 
 	// Set MoodleTenant instance as the owner
-	ctrl.SetControllerReference(mt, cronJob, r.Scheme)
+	if err := ctrl.SetControllerReference(mt, cronJob, r.Scheme); err != nil {
+		return nil
+	}
 
 	return cronJob
 }
@@ -1102,7 +1112,9 @@ func (r *MoodleTenantReconciler) pdbForMoodle(mt *moodlev1alpha1.MoodleTenant, n
 	}
 
 	// Set MoodleTenant instance as the owner
-	ctrl.SetControllerReference(mt, pdb, r.Scheme)
+	if err := ctrl.SetControllerReference(mt, pdb, r.Scheme); err != nil {
+		return nil
+	}
 
 	return pdb
 }

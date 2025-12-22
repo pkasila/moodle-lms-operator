@@ -53,7 +53,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push operator image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
@@ -102,7 +102,7 @@ jobs:
             type=raw,value=5.1-fpm,enable={{is_default_branch}}
 
       - name: Build and push Moodle image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./moodle-image
           file: ./moodle-image/Dockerfile
